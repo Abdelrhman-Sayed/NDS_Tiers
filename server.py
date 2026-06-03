@@ -85,7 +85,8 @@ class Handler(BaseHTTPRequestHandler):
                 data=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {GROQ_API_KEY}"
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "User-Agent": "Mozilla/5.0"
                 }
             )
 
