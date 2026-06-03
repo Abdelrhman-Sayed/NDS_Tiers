@@ -8,6 +8,10 @@ import urllib.error
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
+# اقرأ index.html مرة واحدة عند التشغيل
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+HTML_FILE = os.path.join(BASE_DIR, "index.html")
+
 class Handler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
@@ -18,8 +22,19 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        # Health check - Railway بيحتاجه يتأكد إن السيرفر شغال
-        if self.path == "/" or self.path == "/health":
+        if self.path == "/" or self.path == "/index.html":
+            # ابعت الـ HTML للمتصفح
+            try:
+                with open(HTML_FILE, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", len(content))
+                self.end_headers()
+                self.wfile.write(content)
+            except FileNotFoundError:
+                self._respond_text(404, "index.html not found")
+        elif self.path == "/health":
             self._respond_text(200, "السيرفر شغال ✓")
         else:
             self._respond_text(404, "Not found")
@@ -112,7 +127,6 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    # Railway بيديك البورت في environment variable اسمه PORT
     port = int(os.environ.get("PORT", 8000))
     print(f"✅ السيرفر شغال على port {port}")
     HTTPServer(("0.0.0.0", port), Handler).serve_forever()
