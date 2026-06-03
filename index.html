@@ -247,7 +247,7 @@ let currentSort = 'popular';
 // ===== CHECK SERVER =====
 async function checkServer() {
   try {
-    const r = await fetch('https://tires.up.railway.app/', {
+    const r = await fetch('https://tires.up.railway.app/api/search', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({query:'test', filters:{}}),
@@ -302,7 +302,7 @@ async function doSearch() {
 
   try {
     // ← بيكلم السيرفر المحلي مش الـ API مباشرة
-    const resp = await fetch('https://tires.up.railway.app/', {
+    const resp = await fetch('https://tires.up.railway.app/api/search', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
