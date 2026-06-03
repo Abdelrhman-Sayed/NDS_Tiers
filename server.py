@@ -5,10 +5,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.request
 import urllib.error
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# اقرأ index.html مرة واحدة عند التشغيل
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HTML_FILE = os.path.join(BASE_DIR, "index.html")
 
@@ -23,7 +22,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/" or self.path == "/index.html":
-            # ابعت الـ HTML للمتصفح
             try:
                 with open(HTML_FILE, "rb") as f:
                     content = f.read()
@@ -73,20 +71,28 @@ class Handler(BaseHTTPRequestHandler):
 أرجع 6 إلى 10 نتايج واقعية بأسعار السوق المصري 2024-2025. JSON فقط بدون أي كلام تاني."""
 
             payload = json.dumps({
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 3000}
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": "أنت خبير في سوق الكاوتش في مصر. رد فقط بـ JSON array بدون أي نص زيادة."},
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 3000
             }).encode()
 
-            url = f"{GEMINI_URL}?key={GEMINI_API_KEY}"
             req = urllib.request.Request(
-                url, data=payload,
-                headers={"Content-Type": "application/json"}
+                GROQ_URL,
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {GROQ_API_KEY}"
+                }
             )
 
             try:
                 with urllib.request.urlopen(req) as resp:
                     result = json.loads(resp.read())
-                    text = result["candidates"][0]["content"]["parts"][0]["text"]
+                    text = result["choices"][0]["message"]["content"]
                     text = re.sub(r'```json|```', '', text).strip()
                     match = re.search(r'\[[\s\S]*\]', text)
                     items = json.loads(match.group()) if match else []
@@ -99,7 +105,7 @@ class Handler(BaseHTTPRequestHandler):
 
             except urllib.error.HTTPError as e:
                 error_body = e.read().decode()
-                self._respond(500, {"error": f"Gemini API Error {e.code}: {error_body}"})
+                self._respond(500, {"error": f"Groq API Error {e.code}: {error_body}"})
             except Exception as e:
                 self._respond(500, {"error": str(e)})
         else:
